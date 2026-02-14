@@ -1179,8 +1179,6 @@
             <a href="#party">Баяр</a>
             <a href="#countdown">Хугацаа</a>
             <a href="#tour">Байр</a>
-            <a href="#rsvp">RSVP</a>
-            <a href="#gifts">Бэлэг</a>
             <a href="#share">Хуваалцах</a>
         </nav>
     </div>
@@ -1493,6 +1491,7 @@
                             <option value="no">Уучлаарай, ирэхгүй</option>
                         </select>
                     </div>
+
                     
                     <div class="form-group">
                         <label for="message"><i class="fas fa-comment"></i> Бидэнд хэлэх үг</label>
@@ -1519,7 +1518,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+             </div>
             
             <!-- Admin Panel -->
             <div class="admin-panel" id="adminPanel">
@@ -1752,22 +1751,50 @@
             document.getElementById('adminNotComing').textContent = notComing.length;
         }
 
-        // Save RSVP to Google Sheets
-        async function submitToGoogleSheet(data) {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwUSVGCrQW4vCv9uc0voQzfASoaGNZC0s3ULT0eOSnFQSHe3YZVfTMfChvzCQVXypydMw/exec';
-            
-            try {
-                await fetch(scriptURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(data)
-                });
-                return true;
-            } catch (error) {
-                console.error('Google Sheets алдаа:', error);
-                return false;
-            }
-        }
+// Save RSVP to Google Sheets - GIFT-ГҮЙ ХУВИЛБАР
+async function submitToGoogleSheet(data) {
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwZuHwr3HC7XNwAegTindWGx8cMDm9kZkkDKmyCXdVqGodKEQUR1V9tKp_hqTRhU3LRhg/exec';
+    
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('email', data.email);
+    formData.append('phone', data.phone);
+    formData.append('attendance', data.attendance);
+    formData.append('guests', data.guests || 0);
+    formData.append('message', data.message || '');
+    // ⚠️ GIFT ГЭЖ БАЙХГҮЙ !!!
+    formData.append('timestamp', new Date().toLocaleString('mn-MN'));
+    
+    try {
+        await fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData
+        });
+        console.log('Google Sheets руу илгээгдсэн');
+        return true;
+    } catch (error) {
+        console.error('Google Sheets алдаа:', error);
+        return false;
+    }
+    try {
+        // fetch-ийн тохиргоог сайжруулах
+        const response = await fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors', // Энэ нь хөндлөн эхийн хүсэлтийг зөвшөөрөх
+            body: formData
+        });
+        
+        // no-cors режимд response-ийг унших боломжгүй, гэхдээ хүсэлт илгээгдсэн
+        console.log('Google Sheets руу илгээгдсэн');
+        return true;
+        
+    } catch (error) {
+        console.error('Google Sheets алдаа:', error);
+        // Алдаа гарсан ч localStorage-д хадгална
+        return false;
+    }
+}
 
         // Save to Local Storage
         function saveToLocalStorage(data) {
@@ -1807,15 +1834,16 @@
             const loadingSpinner = document.getElementById('loadingSpinner');
             loadingSpinner.style.display = 'flex';
             
-            const formData = {
-                name: document.getElementById('name').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                phone: document.getElementById('phone').value.trim(),
-                attendance: document.getElementById('attendance').value,
-                guests: parseInt(document.getElementById('guests').value) || 0,
-                message: document.getElementById('message').value.trim() || '',
-                gift: document.getElementById('gift').value || ''
-            };
+            // Form submission хэсэгт
+const formData = {
+    name: document.getElementById('name').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    attendance: document.getElementById('attendance').value,
+    guests: parseInt(document.getElementById('guests').value) || 0,
+    message: document.getElementById('message').value.trim() || ''
+    // ⚠️ GIFT БАЙХГҮЙ
+};  
             
             // Validate
             if (!formData.name || !formData.email || !formData.phone || !formData.attendance) {
